@@ -19,9 +19,8 @@ import java.util.Base64;
 
 public class AESExample {
     public static void main(String[] args) throws Exception {
-        String secret = "SuperSecretKey123";
-        byte[] key = secret.getBytes();
-        SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
+        String secret = "SuperSecretKey12345678";  // 16 bytes for AES-128, 24 for AES-192, 32 for AES-256
+        SecretKeySpec secretKey = new SecretKeySpec(secret.getBytes(), "AES");
 
         Cipher cipher = Cipher.getInstance("AES");
         cipher.init(Cipher.ENCRYPT_MODE, secretKey);
@@ -30,6 +29,19 @@ public class AESExample {
         System.out.println("Chiffré : " + Base64.getEncoder().encodeToString(encrypted));
     }
 }
+```
+
+### 🐍 Exemple Python (AES-256) :
+```python
+from Crypto.Cipher import AES
+import base64
+
+key = b'SuperSecretKey12345678'  # 32 bytes for AES-256
+cipher = AES.new(key, AES.MODE_ECB)
+message = b'Message secret   '  # Padding to 16 bytes
+
+encrypted = cipher.encrypt(message)
+print("Chiffré :", base64.b64encode(encrypted).decode())
 ```
 
 ---
@@ -50,16 +62,27 @@ public class RSAExample {
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
         keyGen.initialize(2048);
         KeyPair pair = keyGen.generateKeyPair();
-        PrivateKey privateKey = pair.getPrivate();
-        PublicKey publicKey = pair.getPublic();
-
         Cipher cipher = Cipher.getInstance("RSA");
-        cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+        cipher.init(Cipher.ENCRYPT_MODE, pair.getPublic());
 
         byte[] encrypted = cipher.doFinal("Message secret".getBytes());
         System.out.println("RSA Chiffré : " + Base64.getEncoder().encodeToString(encrypted));
     }
 }
+```
+
+### 🐍 Exemple Python (RSA) :
+```python
+from Crypto.PublicKey import RSA
+from Crypto.Cipher import PKCS1_OAEP
+import base64
+
+key = RSA.generate(2048)
+cipher = PKCS1_OAEP.new(key.publickey())
+message = b'Message secret'
+
+encrypted = cipher.encrypt(message)
+print("RSA Chiffré :", base64.b64encode(encrypted).decode())
 ```
 
 ---
@@ -70,56 +93,40 @@ public class RSAExample {
 - **Crystals-Dilithium** : Signature numérique.
 - **Falcon** : Signature plus compacte.
 
----
+### 📝 Exemple Java (Kyber) :
+```java
+import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
+import org.bouncycastle.pqc.jcajce.spec.KyberParameterSpec;
+import java.security.*;
+import java.util.Base64;
 
-## 🔐 Crystals-Kyber et Crystals-Dilithium vs RSA et ECDSA
+public class KyberExample {
+    public static void main(String[] args) throws Exception {
+        Security.addProvider(new BouncyCastlePQCProvider());
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("Kyber", "BC");
+        keyGen.initialize(KyberParameterSpec.kyber512);
+        KeyPair keyPair = keyGen.generateKeyPair();
+        System.out.println("Clé publique Kyber : " + Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
+    }
+}
+```
 
-### 🚀 Pourquoi Kyber et Dilithium ?
-Les algorithmes comme **RSA** et **ECDSA** sont vulnérables aux attaques des ordinateurs quantiques à cause de l'**algorithme de Shor**.  
-**Crystals-Kyber** et **Crystals-Dilithium** sont conçus pour :  
-- **Résister aux attaques quantiques.**  
-- **Remplacer RSA/ECDSA** dans les échanges de clés et les signatures numériques.  
-- **Sécuriser les communications** à long terme.  
+### 📝 Exemple Java (Dilithium) :
+```java
+import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
+import java.security.*;
+import java.util.Base64;
 
----
-
-### 🗊 Comparaison : Kyber, Dilithium, RSA et ECDSA
-
-| **Caractéristique**                | **Crystals-Kyber**               | **Crystals-Dilithium**           | **RSA**                          | **ECDSA**                        |
-|-----------------------------------|----------------------------------|---------------------------------|---------------------------------|---------------------------------|
-| **Type**                           | Échange de clés (KEM)             | Signature numérique (DSA)        | Échange de clés et signature     | Signature numérique             |
-| **Sécurité contre les quantiques** | ✔️                              | ✔️                               | ❌ (cassable par Shor)           | ❌ (cassable par Shor)           |
-| **Taille des clés**                | Modérée                          | Plus grande                      | Très grande                      | Petite                          |
-| **Vitesse de signature**           | Rapide                           | Rapide                           | Lent                             | Rapide                          |
-| **Base mathématique**              | Réseaux euclidiens (Lattice)      | Réseaux euclidiens (Lattice)     | Factorisation de grands nombres  | Courbes elliptiques             |
-
----
-
-## 🧑‍🔬 L'Algorithme de Shor : La Menace Quantique
-
-### 🔑 Qu'est-ce que l'algorithme de Shor ?
-L'algorithme de Shor, développé en 1994 par **Peter Shor**, est un algorithme quantique capable de **factoriser des nombres entiers** en temps polynomial. Cela signifie qu'il peut :  
-- **Casser RSA** (basé sur la difficulté de factorisation).  
-- **Casser ECC (courbes elliptiques)** en résolvant rapidement les problèmes de logarithmes discrets.  
-
----
-
-### 🧩 Pourquoi RSA et ECDSA sont vulnérables ?
-- **RSA :** Basé sur la difficulté de **factoriser un grand nombre** en ses facteurs premiers.  
-- **ECDSA :** Basé sur la difficulté du **logarithme discret** sur les courbes elliptiques.  
-
-L'algorithme de Shor permet de **résoudre ces problèmes très rapidement** avec un ordinateur quantique suffisamment puissant.  
-
----
-
-### 📉 Complexité de l'Algorithme :
-| **Algorithme** | **Complexité Classique**          | **Complexité Quantique (Shor)**  |
-|---------------|-----------------------------------|---------------------------------|
-| **RSA (n-bits)**   | Exponentielle (`O(2^n)`)           | Polynomial (`O(n^3)`)           |
-| **ECC**       | Sous-exponentielle (`O(2^(n/2))`)   | Polynomial (`O(n^3)`)           |
-
-🔹 **RSA 2048 bits** – cassable en quelques heures par un ordinateur quantique.  
-🔹 **ECC 256 bits** – cassable en quelques minutes par Shor.  
+public class DilithiumExample {
+    public static void main(String[] args) throws Exception {
+        Security.addProvider(new BouncyCastlePQCProvider());
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("Dilithium", "BC");
+        keyGen.initialize(DilithiumParameterSpec.dilithium2);
+        KeyPair keyPair = keyGen.generateKeyPair();
+        System.out.println("Clé publique Dilithium : " + Base64.getEncoder().encodeToString(keyPair.getPublic().getEncoded()));
+    }
+}
+```
 
 ---
 
